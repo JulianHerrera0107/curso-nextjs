@@ -2,6 +2,9 @@ import './ui/global.css';
 import { inter } from './ui/fonts';
 
 export default function RootLayout({
+  //Este archivo será considerado el root layout
+  //Todos los cambios en la interfaz del usuario serán compartidas em
+  //todos los archivos page.tsx del proyecto
   children,
 }: {
   children: React.ReactNode;
