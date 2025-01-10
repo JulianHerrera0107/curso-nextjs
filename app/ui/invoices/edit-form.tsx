@@ -1,5 +1,5 @@
 'use client';
-
+import { updateInvoice } from '@/app/lib/actions'; //Paso 4 de Actualizar la Info de Invoices
 import { CustomerField, InvoiceForm } from '@/app/lib/definitions';
 import {
   CheckIcon,
@@ -17,8 +17,12 @@ export default function EditInvoiceForm({
   invoice: InvoiceForm;
   customers: CustomerField[];
 }) {
+  //Paso 4: Actualizar el invoice con el Id utilizando bind
+  const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
+  //Bind retorna una copia de la función entregada con el valor especificado .this y los argumentos iniciales.
+
   return (
-    <form>
+    <form action={updateInvoiceWithId}> {/* Pasando el ID de la Invoice */}
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
         {/* Customer Name */}
         <div className="mb-4">
