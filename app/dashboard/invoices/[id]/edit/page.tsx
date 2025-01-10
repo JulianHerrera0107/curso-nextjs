@@ -1,5 +1,7 @@
 import Form from '@/app/ui/invoices/edit-form';
 import Breadcrumbs from '@/app/ui/invoices/breadcrumbs';
+import { updateInvoice } from '@/app/lib/actions';
+import { notFound } from 'next/navigation';
 import { fetchInvoiceById, fetchCustomers } from '@/app/lib/data'; //Paso 3
 
 //Paso 2: Leer el Id de la factura de la página de Invoices
@@ -14,6 +16,11 @@ export default async function Page(props: {params: Promise<{ id: string}> }) {
         fetchInvoiceById(id),
         fetchCustomers(),
     ]);
+
+    //Manejando errores cuando no encuentra un ID
+    if (!invoice) {
+        notFound();
+    }
 
   return (
     <main>
