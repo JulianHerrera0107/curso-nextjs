@@ -19,24 +19,60 @@ import { redirect } from 'next/navigation';
 
 const FormSchema = z.object({
     id: z.string(),
-    customerId: z.string(),
-    amount: z.coerce.number(),
-    status: z.enum(['pending', 'paid']),
+    customerId: z.string({
+        //Mensaje de bajo de la casilla para completar la casilla cliente
+        invalid_type_error: 'Por favor selecciona un cliente.',
+    }),
+    amount: z.coerce
+        .number()
+        //Mensaje de bajo de la casilla para ingresar valores mayores a 0
+        //Le decimos a Zod con la función .gt() una condición > 0
+        .gt(0, { message: 'Por favor ingresa un valor mayor a $0.' }),
+    status: z.enum(['pending', 'paid'], {
+        //Mensaje de bajo de la casilla para seleccionar alguno de los estados
+        invalid_type_error: 'Por favor selecciona un estado de la factura.',
+    }),
     date: z.string(),
 });
+
+// ### PARAMETRO prevState ### //
+//prevState contiene el estado pasado de useActionState hook. Es un prop requerido
+export type State = {
+    errors?: {
+        customerId?: string[];
+        amount?: string[];
+        status?: string[];
+    };
+    message?: string | null;
+};
+
 
 // ############ FUNCIÓN CREAR FACTURA ############ //
 
 //Omitimos la id y la fecha ya que no están presentes en el formulario
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
 
-export async function createInvoice(formData: FormData) {
-    //Extraer los datos del formulario
-    const { customerId, amount, status } = CreateInvoice.parse({
+export async function createInvoice(prevState: State, formData: FormData) {
+    //Validar los campos del formulario usando Zod
+    const validatedFields = CreateInvoice.safeParse({
+        //Extraer los datos del formulario
+        //const { customerId, amount, status } = CreateInvoice.parse({
         customerId: formData.get('customerId'),
         amount: formData.get('amount'),
         status: formData.get('status'),
     });
+
+    // Si el form de validación falla, retorna los errores temprano. De lo contrario, continua.
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'Campos faltantes. Imposible Crear la Factura.',
+        };
+    }
+    console.log(validatedFields);
+
+    // $$$$$ Preparar los datos para la inserción en la Base de datos $$$$$ ///
+    const { customerId, amount, status } = validatedFields.data;
     //Buena práctica transformar para evitar errores en el redondeo
     const amountInCents = amount * 100;
     //Crear el formarto "YYYY-MM-DD" para la creación de la factura en la BD
@@ -50,6 +86,7 @@ export async function createInvoice(formData: FormData) {
         VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
         `; //Se transforma para evitar inyecciones de SQL
     } catch (error) {
+        // Si un error en la BD ocurre, retorna más de un error especifico.
         return {
             message: 'Error en la Base de datos: Fallo en la Creación de la Factura'
         };
