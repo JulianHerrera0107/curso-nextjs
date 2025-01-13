@@ -15,6 +15,10 @@ import { revalidatePath } from 'next/cache';
 //Libreria para rederigir de vuelta a la ruta Dashboard/invoices
 import { redirect } from 'next/navigation';
 
+//Conectar la Lógica de autenticación con el login
+import { signIn } from '@/auth';
+import { AuthError } from 'next-auth';
+
 // ### ESQUEMA VALIDACION TIPO DE DATOS CON ZOD ### //
 
 const FormSchema = z.object({
@@ -156,5 +160,26 @@ export async function deleteInvoice(id: string) {
         return { message: 'Error en la Base de datos: Fallo en Eliminar la factura.' };
         // console.error('Error en la Base de Datos: Fallo en Eliminar la Factura.', error);
         // throw new Error('Error en la Base de Datos: Fallo en Eliminar la Factura.');
+    }
+}
+
+// ############ FUNCIÓN AUTENTICAR LOGIN ############ //
+
+export async function authenticate(
+    prevState: string | undefined,
+    formData: FormData,
+) {
+    try {
+        await signIn('credentials', formData);
+    } catch (error) {
+        if (error instanceof AuthError) {
+            switch (error.type) {
+                case 'CredentialsSignin':
+                    return 'Invalid credentials.';
+                default:
+                    return 'Something went wrong.';
+            }
+        }
+        throw error;
     }
 }
